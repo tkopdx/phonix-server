@@ -23,6 +23,7 @@ app.use(logger("dev"));
 // app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(express.static('./public/index.html'))
 
 var whitelist = ['http://localhost:3000', 'https://mighty-chamber-55300.herokuapp.com/'];
 
