@@ -12,8 +12,9 @@ const textToSpeech = require('@google-cloud/text-to-speech');
 // Import other required libraries
 const fs = require('fs');
 const util = require('util');
+const { url } = require("inspector");
 // Creates a client
-const client = new textToSpeech.TextToSpeechClient();
+const clientTTS = new textToSpeech.TextToSpeechClient();
 
 // use morgan for logging requests
 app.use(logger("dev"));
@@ -22,22 +23,17 @@ app.use(logger("dev"));
 // app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(cors());
-// Serve up static assets
-app.use(express.static("./client/build"));
 
+var corsOptions = {
+  origin: ['http://localhost:3000', 'https://mighty-chamber-55300.herokuapp.com/'],
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}
 
-// Send every other request to the React app
-// Define any API routes before this runs
-// app.get("/mreh", (req, res) => {
-//   res.sendFile(path.join(__dirname, "./client/build/index.html"));
-// });
-// app.get("/other", (req, res) => {
-//     res.sendFile(path.join(__dirname, "./public/other.html"));
-// });
+app.use(cors(corsOptions));
+
 app.get("/output.mp3", (req, res) => {
     res.setHeader("content-type", "audio/mpeg");
-    fs.createReadStream("output.mp3").pipe(res);
+    fs.createReadStream(__dirname + "/public/assets/output.mp3").pipe(res);
 });
 app.post("/texttospeech", async function(req, res) {
 
@@ -59,55 +55,26 @@ app.post("/texttospeech", async function(req, res) {
 
   // Performs the text-to-speech request
   try {
-    const [response] = await client.synthesizeSpeech(request);
+    const [response] = await clientTTS.synthesizeSpeech(request);
+
     // Write the binary audio content to a local file
     const writeFile = util.promisify(fs.writeFile);
-    const outputFile = 'output.mp3'
-    await writeFile( outputFile, response.audioContent, 'binary');
+    const filename = 'output.mp3'
+    const outputFile = __dirname + '/public/assets/' + filename;
+    await writeFile(outputFile, response.audioContent, 'binary');
     console.log('file written');
 
-    //return audio to client
+    // fs.createReadStream(response.audioContent, options).pipe(res);
+
+    // const uri = `data:${type};${encoding},${data}`;
+
+    // console.log('hopefully this is an base64 audio file', uri);
+
+    const URL = 'https://cryptic-atoll-82963.herokuapp.com/' + filename;
+
     res.send({
       result: 'success',
-      audioURL: 'http://localhost:3001/output.mp3'
-    });
-  } catch (err) {
-    res.send({error: `${err}`});
-    console.log('error: ', err);
-  }  
-});
-
-app.post("/texttospeechsentence", async function(req, res) {
-
-  // console.log(req);
-  console.log('body: ', req.body);
-
-  console.log('text: ', req.body.text);
-  // The text to synthesize
-  const text = req.body.text;
-
-  // Construct the request
-  const request = {
-    input: {text: text},
-    // Select the language and SSML voice gender (optional)
-    voice: {languageCode: 'en-US', name: 'en-US-Wavenet-F', ssmlGender: 'FEMALE'},
-    // select the type of audio encoding
-    audioConfig: {audioEncoding: 'MP3'},
-  };
-
-  // Performs the text-to-speech request
-  try {
-    const [response] = await client.synthesizeSpeech(request);
-    // Write the binary audio content to a local file
-    const writeFile = util.promisify(fs.writeFile);
-    const outputFile = 'output.mp3'
-    await writeFile( outputFile, response.audioContent, 'binary');
-    console.log('file written');
-
-    //return audio to client
-    res.send({
-      result: 'success',
-      audioURL: 'http://localhost:3001/output.mp3'
+      audioURL: URL
     });
   } catch (err) {
     res.send({error: `${err}`});
@@ -118,3 +85,5 @@ app.post("/texttospeechsentence", async function(req, res) {
 app.listen(PORT, () => {
   console.log(`Our server is now listening on port ${PORT}!`);
 });
+
+// test().catch(console.dir);
