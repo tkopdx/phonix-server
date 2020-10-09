@@ -24,7 +24,7 @@ app.use(logger("dev"));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-var whiteList = ['http://localhost:3000', 'https://mighty-chamber-55300.herokuapp.com/'];
+var whitelist = ['http://localhost:3000', 'https://mighty-chamber-55300.herokuapp.com/'];
 
 var corsOptions = {
   origin: function(origin, callback){
